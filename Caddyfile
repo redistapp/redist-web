@@ -1,12 +1,13 @@
 # =============================================================================
-# Caddyfile — serve a SPA do redist-web
+# Caddyfile — serve a SPA do redist-web e roteia a API/auth para a BFF
 # -----------------------------------------------------------------------------
-# O endereço vem da variável DOMAIN (com default :80 para dev local):
+# DOMAIN (default :80 em dev):
 #   Produção : DOMAIN=redist.seudominio.com.br -> HTTPS automático (Let's Encrypt)
-#   Dev local: DOMAIN=:80 (padrão)             -> HTTP puro
+#   Dev local: DOMAIN=:80                       -> HTTP puro
 #
-# try_files garante o fallback de SPA: qualquer rota (ex.: /login, /cadastro)
-# cai em /index.html, e o React Router assume no cliente.
+# Rotas:
+#   /api/*, /auth/*  -> BFF (redist-bff): injeta o ApiToken e a sessão (cookie).
+#   resto            -> arquivos da SPA, com fallback para /index.html (React Router).
 # =============================================================================
 
 {
@@ -16,12 +17,24 @@
 }
 
 {$DOMAIN::80} {
-	root * /srv
 	encode zstd gzip
-	try_files {path} /index.html
-	file_server
 
-	# cache longo para os assets versionados (hash no nome); HTML nunca em cache.
+	# API e autenticação -> BFF (na rede interna do compose).
+	handle /api/* {
+		reverse_proxy bff:3001
+	}
+	handle /auth/* {
+		reverse_proxy bff:3001
+	}
+
+	# SPA estática + fallback de rotas do React Router.
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
+
+	# Cache longo para assets versionados (hash no nome); HTML nunca em cache.
 	@assets path /assets/*
 	header @assets Cache-Control "public, max-age=31536000, immutable"
 	header /index.html Cache-Control "no-cache"

@@ -14,11 +14,8 @@ RUN npm ci
 
 COPY . .
 
-# A URL da API é embutida em BUILD TIME (Vite lê import.meta.env.VITE_*).
-# Passe com --build-arg VITE_API_URL=... quando o login for conectado à API.
-ARG VITE_API_URL=""
-ENV VITE_API_URL=$VITE_API_URL
-
+# A SPA fala com a BFF por caminhos relativos (mesma origem, via Caddy), então
+# NÃO há URL de API embutida no build — nada de segredo no bundle.
 RUN npm run build
 
 # ---- runtime ----

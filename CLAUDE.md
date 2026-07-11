@@ -27,33 +27,46 @@ npm run preview   # serve o build de produção
 npm run lint      # oxlint
 ```
 
-## Docker
+## Docker (tier web: SPA + BFF)
 
-A SPA é dockerizada de forma self-contained: `Dockerfile` multi-stage
-(`node:22-alpine` builda → `caddy:2-alpine` serve `dist/`), `Caddyfile` com
-**fallback de SPA** (`try_files … /index.html`) + HTTPS via `DOMAIN`/`ACME_EMAIL`,
-e `docker-compose.yml`. `docker compose up -d --build` (porta 80/443) ou
-`docker run -e DOMAIN=:80 -p 8080:80 redist-web`. ⚠️ `VITE_API_URL` é embutida em
-**build time** (`--build-arg`) — Vite não lê env em runtime. Ver README.
+O `docker-compose.yml` sobe dois serviços: `web` (Caddy servindo a SPA estática
++ HTTPS) e `bff` (buildado de `../redist-bff`). O Caddy roteia `/api/*` e
+`/auth/*` para `bff:3001` e serve o resto como SPA (fallback `try_files …
+/index.html`). `docker compose up -d --build`. Portas do host são
+parametrizáveis (`WEB_HTTP_PORT`, para não colidir com a stack do redist-server
+na 80). A SPA fala com a BFF por **mesma origem** — não há URL de API nem segredo
+embutido no bundle. Ver `.env.example` (DOMAIN, API_BASE_URL, API_TOKEN, …).
 
 ## Arquitetura
 
 ```
 src/
-  main.tsx              entrypoint (BrowserRouter + import da fonte + index.css)
-  App.tsx               rotas: / (landing), /login, /cadastro
+  main.tsx              entrypoint (BrowserRouter + SessionProvider + fonte + index.css)
+  App.tsx               rotas: / (landing), /login, /cadastro, /painel (protegida)
   index.css            @import 'tailwindcss' + @theme com os tokens da marca
-  lib/cn.ts            helper para juntar classes
+  lib/
+    cn.ts              helper para juntar classes
+    api.ts             cliente HTTP: fala com a BFF (mesma origem, credentials:include)
+  contexts/
+    SessionContext.tsx estado de sessão (user/status) + login/logout; useSession()
   components/
     Logo.tsx           marca (selo + wordmark), tone light/dark
+    ProtectedRoute.tsx redireciona p/ /login se não autenticado
     ui/                primitivos: Button (+ buttonClasses), Container, Field
     layout/            Navbar, Footer, AuthLayout (split de login/cadastro)
     landing/           seções: Hero, Stats, HowItWorks, Features, Pricing, Faq, CtaBanner
-  pages/               LandingPage, LoginPage, RegisterPage
+  pages/               LandingPage, LoginPage, RegisterPage, PainelPage (área logada)
 public/favicon.svg     marca do Redist
 ```
 
 Alias de import: `@/` → `src/` (configurado em `vite.config.ts` e `tsconfig.app.json`).
+
+**Auth (via BFF):** a SPA nunca vê segredos. `lib/api.ts` chama caminhos relativos
+`/auth/*` e `/api/*` com `credentials: 'include'`; a BFF (`redist-bff`) guarda o
+`ApiToken` e a sessão (cookie httpOnly). Em **dev**, o Vite faz proxy de `/api` e
+`/auth` para a BFF (`vite.config.ts`, `BFF_TARGET`, padrão `http://localhost:3001`)
+— rode a BFF junto (`cd ../redist-bff && npm run dev`). Em **prod/Docker**, o Caddy
+roteia essas rotas para o serviço `bff`.
 
 ## Design system (paleta B — "serviço em movimento")
 
@@ -74,10 +87,10 @@ Convenções de UI:
 
 ## Estado atual e próximos passos
 
-- **Pronto:** landing institucional completa (hero, números, como funciona, recursos, planos, FAQ, CTA, footer) + telas de **login** e **cadastro** (scaffold; cadastro é multietapa, só o passo 1 está montado).
-- **Não conectado à API ainda.** Os formulários fazem `preventDefault` (ver `TODO` em `pages/LoginPage.tsx` e `RegisterPage.tsx`).
-- ⚠️ **Segurança (importante para web):** o `API_TOKEN` estático da API fica **totalmente exposto** num front web (bundle/DevTools). Antes de conectar o login de verdade, é preciso repensar esse modelo (item S2 do parecer) — ex.: proxy/BFF que guarda o token no servidor, e sessão por cookie httpOnly. Não embuta segredos reais no cliente.
-- Pendente: cliente HTTP (axios) + contexto de sessão, fluxo multietapa do cadastro, área logada (dashboard, intenções, matches, perfil, premium).
+- **Pronto:** landing institucional completa; **login funcional** conectado à API via BFF (sessão em cookie httpOnly, verificado ponta a ponta); logout; rota protegida `/painel` (placeholder da área logada).
+- **Segurança (S2 resolvido para o web):** nenhum segredo no cliente — o `ApiToken` e o Bearer ficam na BFF; a sessão é um cookie httpOnly. A SPA só conhece caminhos relativos.
+- **Scaffold:** `cadastro` ainda é multietapa com só o passo 1 (faz `preventDefault`).
+- Pendente: fluxo multietapa do cadastro; área logada de verdade (dashboard, intenções, matches, perfil, premium); endurecer CSRF na BFF; recuperação de senha.
 
 ## Verificação
 

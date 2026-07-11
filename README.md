@@ -25,35 +25,36 @@ npm run preview    # serve o build
 npm run lint       # oxlint
 ```
 
-## Rodar com Docker
+## Rodar com Docker (SPA + BFF)
 
-A SPA é compilada e servida pelo **Caddy** (estáticos + HTTPS automático). A
-imagem é multi-stage: `node:22-alpine` roda `npm run build`; o `caddy:2-alpine`
-serve `dist/` com **fallback de SPA** (`/login`, `/cadastro` etc. caem em
+O `docker-compose.yml` sobe o **tier web** completo: `web` (Caddy servindo a SPA +
+HTTPS) e `bff` ([`redist-bff`](../redist-bff), que guarda o `ApiToken` e a sessão).
+O Caddy roteia `/api` e `/auth` para a BFF e serve o resto como SPA (fallback para
 `index.html`).
 
 ```bash
-# imagem self-contained (dev local em HTTP):
-docker build -t redist-web .
-docker run --rm -e DOMAIN=:80 -p 8080:80 redist-web   # http://localhost:8080
+cp .env.example .env        # preencha API_TOKEN (o mesmo do redist-server)
+docker compose up -d --build
 
-# ou via compose:
-docker compose up -d --build                           # http://localhost
+# a stack do redist-server ocupa a porta 80? use outra porta no host:
+WEB_HTTP_PORT=8080 WEB_HTTPS_PORT=8443 docker compose up -d --build
 ```
 
-Produção (HTTPS automático): defina `DOMAIN=seu.dominio.com.br` e `ACME_EMAIL`
-(ver `.env.example`); o Caddy emite/renova o certificado sozinho.
+Produção (HTTPS automático): defina `DOMAIN=seu.dominio.com.br` e `ACME_EMAIL`; o
+Caddy emite/renova o certificado sozinho. A BFF precisa de `API_BASE_URL` (a API
+pública) e `API_TOKEN`. Ver `.env.example`.
 
-> A URL da API é embutida em **build time** (`VITE_API_URL`, Vite). Quando o
-> login for conectado, rebuilde a imagem passando o valor:
-> `docker build --build-arg VITE_API_URL=https://api.exemplo.com -t redist-web .`
+> A SPA fala com a BFF por **mesma origem** (caminhos relativos) — não há URL de API
+> nem segredo embutido no bundle.
 
 ## O que já existe
 
 - **Landing institucional** completa e responsiva: hero, números, como funciona, recursos, planos (freemium), perguntas frequentes, chamada final e rodapé.
-- Telas de **login** e **cadastro** (esta última, multietapa — passo 1 montado).
+- **Login funcional** conectado à API via BFF: a sessão fica num cookie httpOnly, sem expor segredos ao navegador. Inclui logout e a rota protegida `/painel` (base da área logada).
+- Tela de **cadastro** (multietapa — passo 1 montado, ainda sem submit).
 
-Os formulários ainda **não estão conectados à API** (ver `CLAUDE.md` para a nota de segurança sobre o `API_TOKEN` no cliente e os próximos passos).
+Para desenvolver com login, rode a BFF junto: `cd ../redist-bff && npm run dev`
+(o Vite faz proxy de `/api` e `/auth` para ela).
 
 ## Estrutura
 
@@ -68,6 +69,7 @@ Detalhes de arquitetura, design system (paleta e convenções) e próximos passo
 
 ## Repositórios relacionados
 
+- [`redist-bff`](../redist-bff) — backend-for-frontend (guarda o ApiToken e a sessão)
 - [`redist-server`](../redist-server) — API (AdonisJS)
 - [`redist-expo-app`](../redist-expo-app) — app mobile (Expo)
 - [`lambda-functions`](../lambda-functions) — funções AWS Lambda

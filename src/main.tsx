@@ -4,11 +4,14 @@ import { BrowserRouter } from 'react-router-dom'
 import '@fontsource-variable/inter/index.css'
 import './index.css'
 import App from './App.tsx'
+import { SessionProvider } from '@/contexts/SessionContext'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
-      <App />
+      <SessionProvider>
+        <App />
+      </SessionProvider>
     </BrowserRouter>
   </StrictMode>,
 )
