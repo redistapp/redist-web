@@ -25,6 +25,29 @@ npm run preview    # serve o build
 npm run lint       # oxlint
 ```
 
+## Rodar com Docker
+
+A SPA é compilada e servida pelo **Caddy** (estáticos + HTTPS automático). A
+imagem é multi-stage: `node:22-alpine` roda `npm run build`; o `caddy:2-alpine`
+serve `dist/` com **fallback de SPA** (`/login`, `/cadastro` etc. caem em
+`index.html`).
+
+```bash
+# imagem self-contained (dev local em HTTP):
+docker build -t redist-web .
+docker run --rm -e DOMAIN=:80 -p 8080:80 redist-web   # http://localhost:8080
+
+# ou via compose:
+docker compose up -d --build                           # http://localhost
+```
+
+Produção (HTTPS automático): defina `DOMAIN=seu.dominio.com.br` e `ACME_EMAIL`
+(ver `.env.example`); o Caddy emite/renova o certificado sozinho.
+
+> A URL da API é embutida em **build time** (`VITE_API_URL`, Vite). Quando o
+> login for conectado, rebuilde a imagem passando o valor:
+> `docker build --build-arg VITE_API_URL=https://api.exemplo.com -t redist-web .`
+
 ## O que já existe
 
 - **Landing institucional** completa e responsiva: hero, números, como funciona, recursos, planos (freemium), perguntas frequentes, chamada final e rodapé.

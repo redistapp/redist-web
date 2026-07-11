@@ -27,6 +27,15 @@ npm run preview   # serve o build de produção
 npm run lint      # oxlint
 ```
 
+## Docker
+
+A SPA é dockerizada de forma self-contained: `Dockerfile` multi-stage
+(`node:22-alpine` builda → `caddy:2-alpine` serve `dist/`), `Caddyfile` com
+**fallback de SPA** (`try_files … /index.html`) + HTTPS via `DOMAIN`/`ACME_EMAIL`,
+e `docker-compose.yml`. `docker compose up -d --build` (porta 80/443) ou
+`docker run -e DOMAIN=:80 -p 8080:80 redist-web`. ⚠️ `VITE_API_URL` é embutida em
+**build time** (`--build-arg`) — Vite não lê env em runtime. Ver README.
+
 ## Arquitetura
 
 ```

@@ -1,0 +1,34 @@
+# =============================================================================
+# redist-web — orquestração Docker
+# -----------------------------------------------------------------------------
+# Um único serviço: a SPA já compilada, servida pelo Caddy (estáticos + HTTPS).
+# Variáveis vêm do ambiente / de um ./.env opcional (interpolação ${...}).
+# =============================================================================
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # URL da API embutida no build (Vite). Vazia por enquanto — o front
+        # ainda não consome a API. Defina quando conectar o login.
+        VITE_API_URL: ${VITE_API_URL:-}
+    image: redist-web:latest
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+      - '443:443/udp' # HTTP/3
+    environment:
+      # Dev local: :80 (HTTP). Produção: um domínio real -> HTTPS automático.
+      DOMAIN: ${DOMAIN:-:80}
+      # Só usado quando DOMAIN é um domínio real (avisos de expiração de cert).
+      ACME_EMAIL: ${ACME_EMAIL:-admin@example.com}
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:
