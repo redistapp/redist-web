@@ -1,0 +1,59 @@
+@import 'tailwindcss';
+
+/* =========================================================================
+   Design tokens — Redist (paleta B: azul institucional + verde do "match")
+   Tailwind v4 lê estas variáveis e gera utilitários (bg-brand-600, etc.).
+   ========================================================================= */
+@theme {
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system,
+    'Segoe UI', Roboto, sans-serif;
+
+  /* Navy — superfícies escuras, títulos */
+  --color-navy-950: #071b30;
+  --color-navy-900: #0c2b4b;
+  --color-navy-800: #123a63;
+  --color-navy-700: #1b4b7e;
+  --color-navy-600: #275d92;
+
+  /* Brand blue — ações primárias e links */
+  --color-brand-50: #eef4fc;
+  --color-brand-100: #d8e6f8;
+  --color-brand-200: #b4cef0;
+  --color-brand-300: #86ade4;
+  --color-brand-400: #4f86d5;
+  --color-brand-500: #2f74d6;
+  --color-brand-600: #1e5fbf;
+  --color-brand-700: #184e9e;
+  --color-brand-800: #17417f;
+  --color-brand-900: #163a6c;
+
+  /* Match green — permuta encontrada / sucesso */
+  --color-match-50: #e7f7f0;
+  --color-match-100: #c6ecdb;
+  --color-match-200: #90dabc;
+  --color-match-500: #10b981;
+  --color-match-600: #059669;
+  --color-match-700: #047857;
+  --color-match-800: #065f46;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    margin: 0;
+    font-family: var(--font-sans);
+    color: var(--color-navy-900);
+    background: #ffffff;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-brand-600);
+    outline-offset: 2px;
+  }
+}
