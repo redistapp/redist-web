@@ -44,20 +44,27 @@ src/
   main.tsx              entrypoint (BrowserRouter + SessionProvider + fonte + index.css)
   App.tsx               rotas: / (landing), /login, /cadastro, /painel (protegida)
   index.css            @import 'tailwindcss' + @theme com os tokens da marca
+  types.ts             tipos de domínio (FullUser, Intention, Match, IdName, …)
   lib/
     cn.ts              helper para juntar classes
-    api.ts             cliente HTTP: fala com a BFF (mesma origem, credentials:include)
+    api.ts             cliente HTTP base: fala com a BFF (/auth,/api, credentials:include)
+    resources.ts       funções de API do domínio (getFullUser, intenções, matches, dropdowns, registerUser, updateContact)
+    useAsync.ts        hook de carregamento (data/loading/error/reload)
   contexts/
     SessionContext.tsx estado de sessão (user/status) + login/logout; useSession()
   components/
     Logo.tsx           marca (selo + wordmark), tone light/dark
     ProtectedRoute.tsx redireciona p/ /login se não autenticado
-    ui/                primitivos: Button (+ buttonClasses), Container, Field
-    layout/            Navbar, Footer, AuthLayout (split de login/cadastro)
-    landing/           seções: Hero, Stats, HowItWorks, Features, Pricing, Faq, CtaBanner
-  pages/               LandingPage, LoginPage, RegisterPage, PainelPage (área logada)
+    ui/                primitivos: Button, Container, Field, Select, Modal, Spinner, States (PageHeader/EmptyState/ErrorState)
+    layout/            Navbar, Footer, AuthLayout (login), AppShell (área logada: nav + <Outlet/>)
+    landing/           seções da landing
+  pages/
+    LandingPage, LoginPage, RegisterPage (cadastro multietapa)
+    app/               DashboardPage, IntentionsPage, MatchesPage, ProfilePage
 public/favicon.svg     marca do Redist
 ```
+
+Área logada em `/painel` (layout route: `ProtectedRoute` → `AppShell` → `<Outlet/>`): `/painel` (dashboard), `/painel/intencoes`, `/painel/matches`, `/painel/perfil`. Dados via `lib/resources.ts` + `useAsync`. Cadastro é multietapa (`useState` único + dropdowns encadeados) → `registerUser` → auto-login.
 
 Alias de import: `@/` → `src/` (configurado em `vite.config.ts` e `tsconfig.app.json`).
 
@@ -87,10 +94,10 @@ Convenções de UI:
 
 ## Estado atual e próximos passos
 
-- **Pronto:** landing institucional completa; **login funcional** conectado à API via BFF (sessão em cookie httpOnly, verificado ponta a ponta); logout; rota protegida `/painel` (placeholder da área logada).
-- **Segurança (S2 resolvido para o web):** nenhum segredo no cliente — o `ApiToken` e o Bearer ficam na BFF; a sessão é um cookie httpOnly. A SPA só conhece caminhos relativos.
-- **Scaffold:** `cadastro` ainda é multietapa com só o passo 1 (faz `preventDefault`).
-- Pendente: fluxo multietapa do cadastro; área logada de verdade (dashboard, intenções, matches, perfil, premium); endurecer CSRF na BFF; recuperação de senha.
+- **Pronto:** landing completa; login/logout via BFF (cookie httpOnly); **cadastro multietapa** (4 passos → auto-login); **área logada de verdade** — dashboard (contadores), intenções (listar/adicionar/remover), matches, perfil (ver + editar contato). Tudo verificado ponta a ponta contra a API local.
+- **Segurança (S2 resolvido para o web):** nenhum segredo no cliente — `ApiToken` e Bearer ficam na BFF; sessão em cookie httpOnly; SPA só usa caminhos relativos.
+- Pendente: **premium/Stripe** (Fase B — a API retorna `client_secret` de PaymentIntent, então será Stripe Elements); edições complexas de perfil (instituição/carreira/CBO); endurecer CSRF na BFF; recuperação de senha.
+- Ressalvas do backend (não corrigir aqui): `GET /matches` filtra por `professional_1 = user.id` (deveria ser id de ProfessionalData) → costuma vir vazio; `updateProfile` não altera `instagram`; datas do perfil vêm sem zero-padding (`1992-7-27`).
 
 ## Verificação
 

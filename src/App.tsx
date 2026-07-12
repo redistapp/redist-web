@@ -2,8 +2,12 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import LandingPage from '@/pages/LandingPage'
 import LoginPage from '@/pages/LoginPage'
 import RegisterPage from '@/pages/RegisterPage'
-import PainelPage from '@/pages/PainelPage'
+import DashboardPage from '@/pages/app/DashboardPage'
+import IntentionsPage from '@/pages/app/IntentionsPage'
+import MatchesPage from '@/pages/app/MatchesPage'
+import ProfilePage from '@/pages/app/ProfilePage'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
+import { AppShell } from '@/components/layout/AppShell'
 
 function App() {
   return (
@@ -11,14 +15,21 @@ function App() {
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/cadastro" element={<RegisterPage />} />
+
+      {/* Área logada — layout compartilhado protegido */}
       <Route
-        path="/painel"
         element={
           <ProtectedRoute>
-            <PainelPage />
+            <AppShell />
           </ProtectedRoute>
         }
-      />
+      >
+        <Route path="/painel" element={<DashboardPage />} />
+        <Route path="/painel/intencoes" element={<IntentionsPage />} />
+        <Route path="/painel/matches" element={<MatchesPage />} />
+        <Route path="/painel/perfil" element={<ProfilePage />} />
+      </Route>
+
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
