@@ -115,12 +115,19 @@ export function getGeneralAreas(): Promise<IdName[]> {
   return getJson<IdName[]>('/know/generals')
 }
 
-export function getSpecificAreas(generalId: number): Promise<IdName[]> {
-  return getJson<IdName[]>(`/know/generals/${generalId}/specifics`)
+export async function getSpecificAreas(generalId: number): Promise<IdName[]> {
+  // A API devolve o geral com os específicos aninhados: { id, name, specifics: [...] }.
+  const data = await getJson<{ specifics?: IdName[] }>(`/know/generals/${generalId}/specifics`)
+  return data.specifics ?? []
 }
 
-export function getInstitutionsByCity(cityId: number): Promise<IdName[]> {
-  return getJson<IdName[]>(`/cities/${cityId}/institutions`)
+export async function getInstitutionsByCity(cityId: number): Promise<IdName[]> {
+  // A API devolve { city, total, institutions: [{ id, description, ... }] } — o nome
+  // da instituição vem em `description`, não em `name`.
+  const data = await getJson<{
+    institutions?: { id: number; description?: string; name?: string }[]
+  }>(`/cities/${cityId}/institutions`)
+  return (data.institutions ?? []).map((i) => ({ id: i.id, name: i.description ?? i.name ?? '' }))
 }
 
 export async function searchCbo(term: string): Promise<CboItem[]> {

@@ -5,13 +5,16 @@ import '@fontsource-variable/inter/index.css'
 import './index.css'
 import App from './App.tsx'
 import { SessionProvider } from '@/contexts/SessionContext'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <BrowserRouter>
-      <SessionProvider>
-        <App />
-      </SessionProvider>
-    </BrowserRouter>
+    <ErrorBoundary>
+      <BrowserRouter>
+        <SessionProvider>
+          <App />
+        </SessionProvider>
+      </BrowserRouter>
+    </ErrorBoundary>
   </StrictMode>,
 )
