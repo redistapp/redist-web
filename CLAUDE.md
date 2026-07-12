@@ -94,9 +94,9 @@ Convenções de UI:
 
 ## Estado atual e próximos passos
 
-- **Pronto:** landing completa; login/logout via BFF (cookie httpOnly); **cadastro multietapa** (4 passos → auto-login); **área logada de verdade** — dashboard (contadores), intenções (listar/adicionar/remover), matches, perfil (ver + editar contato). Tudo verificado ponta a ponta contra a API local.
-- **Segurança (S2 resolvido para o web):** nenhum segredo no cliente — `ApiToken` e Bearer ficam na BFF; sessão em cookie httpOnly; SPA só usa caminhos relativos.
-- Pendente: **premium/Stripe** (Fase B — a API retorna `client_secret` de PaymentIntent, então será Stripe Elements); edições complexas de perfil (instituição/carreira/CBO); endurecer CSRF na BFF; recuperação de senha.
+- **Pronto:** landing completa; login/logout via BFF (cookie httpOnly); **cadastro multietapa** (4 passos → auto-login); **recuperação de senha** (`/recuperar-senha` → BFF `/auth/recover-password`); **área logada** — dashboard, intenções (listar/adicionar/remover), matches, perfil (editar dados pessoais **e** profissionais). Tudo verificado ponta a ponta contra a API local.
+- **Segurança:** nenhum segredo no cliente (`ApiToken`/Bearer na BFF; sessão em cookie httpOnly). **CSRF**: a SPA envia `X-Requested-By: redist-web` em toda requisição (`lib/api.ts`); a BFF exige esse header em mutações.
+- Pendente: **premium/Stripe** (Fase B — a API retorna `client_secret` de PaymentIntent → Stripe Elements); **troca de instituição** no perfil (hoje o modal profissional mantém a instituição atual); upload de foto de perfil.
 - Ressalvas do backend (não corrigir aqui): `GET /matches` filtra por `professional_1 = user.id` (deveria ser id de ProfessionalData) → costuma vir vazio; `updateProfile` não altera `instagram`; datas do perfil vêm sem zero-padding (`1992-7-27`).
 
 ## Verificação

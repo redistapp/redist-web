@@ -67,9 +67,9 @@ export default function LoginPage() {
             <label htmlFor="senha" className="text-sm font-medium text-navy-900">
               Senha
             </label>
-            <a href="#" className="text-sm text-brand-700 hover:underline">
+            <Link to="/recuperar-senha" className="text-sm text-brand-700 hover:underline">
               Esqueci minha senha
-            </a>
+            </Link>
           </div>
           <input
             id="senha"

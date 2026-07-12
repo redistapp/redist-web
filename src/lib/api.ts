@@ -16,7 +16,12 @@ async function request(path: string, init?: RequestInit): Promise<Response> {
   return fetch(path, {
     credentials: 'include',
     ...init,
-    headers: { 'Content-Type': 'application/json', ...(init?.headers ?? {}) },
+    headers: {
+      'Content-Type': 'application/json',
+      // Header de proteção CSRF exigido pela BFF em métodos que mudam estado.
+      'X-Requested-By': 'redist-web',
+      ...(init?.headers ?? {}),
+    },
   })
 }
 
@@ -42,6 +47,15 @@ export async function meRequest(): Promise<SessionUser | null> {
   if (!res.ok) return null
   const data = (await res.json()) as { user: SessionUser | null }
   return data.user
+}
+
+/** Recuperação de senha: a BFF pede à API uma nova senha (enviada por e-mail).
+ *  Resposta sempre genérica — nunca revela se o CPF existe nem expõe a senha. */
+export async function recoverPasswordRequest(cpf: string, dateBirth: string): Promise<void> {
+  await request('/auth/recover-password', {
+    method: 'POST',
+    body: JSON.stringify({ cpf, date_birth: dateBirth }),
+  }).catch(() => undefined)
 }
 
 /** Chamada autenticada genérica à API (via proxy da BFF em /api/*). */

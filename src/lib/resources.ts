@@ -53,6 +53,23 @@ export async function updateContact(
   if (!res.ok) throw new Error(await readError(res, 'Não foi possível salvar.'))
 }
 
+export async function updateProfessional(
+  userId: number,
+  data: {
+    institution_id: number
+    registration: string
+    office_career: number
+    office_specialization: number
+    cbo_id?: number
+  },
+): Promise<void> {
+  const res = await apiRequest(`/users/update/professional/${userId}`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+  if (!res.ok) throw new Error(await readError(res, 'Não foi possível salvar.'))
+}
+
 // --- Intenções ----------------------------------------------------------------
 
 export function getIntentions(): Promise<IntentionsResponse> {
