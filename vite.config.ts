@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { defineConfig } from 'vite'
 import { fileURLToPath, URL } from 'node:url'
 import react from '@vitejs/plugin-react'
@@ -20,5 +21,10 @@ export default defineConfig({
       '/api': { target: BFF_TARGET, changeOrigin: true },
       '/auth': { target: BFF_TARGET, changeOrigin: true },
     },
+  },
+  test: {
+    environment: 'jsdom',
+    setupFiles: './src/setupTests.ts',
+    globals: true,
   },
 })
