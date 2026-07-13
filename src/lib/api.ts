@@ -13,11 +13,14 @@ export type SessionUser = {
 } & Record<string, unknown>
 
 async function request(path: string, init?: RequestInit): Promise<Response> {
+  // Para FormData (upload de arquivo), não forçamos Content-Type — o browser
+  // define automaticamente "multipart/form-data; boundary=..." sozinho.
+  const isFormData = init?.body instanceof FormData
   return fetch(path, {
     credentials: 'include',
     ...init,
     headers: {
-      'Content-Type': 'application/json',
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       // Header de proteção CSRF exigido pela BFF em métodos que mudam estado.
       'X-Requested-By': 'redist-web',
       ...(init?.headers ?? {}),
@@ -56,6 +59,13 @@ export async function recoverPasswordRequest(cpf: string, dateBirth: string): Pr
     method: 'POST',
     body: JSON.stringify({ cpf, date_birth: dateBirth }),
   }).catch(() => undefined)
+}
+
+/** Configuração pública da BFF (hoje: chave publicável do Stripe). GET, sem CSRF. */
+export async function configRequest(): Promise<{ stripePublishableKey: string }> {
+  const res = await request('/auth/config')
+  if (!res.ok) return { stripePublishableKey: '' }
+  return (await res.json()) as { stripePublishableKey: string }
 }
 
 /** Chamada autenticada genérica à API (via proxy da BFF em /api/*). */

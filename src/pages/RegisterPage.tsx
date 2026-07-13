@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button'
 import { ErrorState } from '@/components/ui/States'
 import { useSession } from '@/contexts/SessionContext'
 import { cn } from '@/lib/cn'
+import { isValidCpf, formatCpf } from '@/lib/cpf'
 import type { CboItem, IdName, StateItem } from '@/types'
 import {
   getStates,
@@ -163,12 +164,17 @@ export default function RegisterPage() {
     }
   }
 
+  const cpfDigits = form.cpf.replace(/\D/g, '')
+  const cpfComplete = cpfDigits.length === 11
+  const cpfInvalid = cpfComplete && !isValidCpf(form.cpf)
+
   const stepValid = (): boolean => {
     if (step === 0)
       return Boolean(
         form.first_name &&
           form.last_name &&
-          form.cpf &&
+          cpfComplete &&
+          isValidCpf(form.cpf) &&
           form.email &&
           form.password.length >= 8 &&
           form.phone &&
@@ -185,7 +191,8 @@ export default function RegisterPage() {
     setError(null)
     try {
       await registerUser({
-        cpf: form.cpf,
+        // Envia sempre sem máscara — o banco guarda CPF puro (11 dígitos).
+        cpf: cpfDigits,
         password: form.password,
         first_name: form.first_name,
         last_name: form.last_name,
@@ -201,7 +208,7 @@ export default function RegisterPage() {
         photo_url: '',
       })
       // Auto-login após o cadastro.
-      await login(form.cpf, form.password)
+      await login(cpfDigits, form.password)
       navigate('/painel', { replace: true })
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Não foi possível concluir o cadastro.')
@@ -255,9 +262,11 @@ export default function RegisterPage() {
                 label="CPF"
                 inputMode="numeric"
                 placeholder="000.000.000-00"
+                maxLength={14}
                 value={form.cpf}
-                onChange={(e) => set({ cpf: e.target.value })}
+                onChange={(e) => set({ cpf: formatCpf(e.target.value) })}
                 required
+                hint={cpfInvalid ? <span className="text-red-600">CPF inválido.</span> : undefined}
               />
               <Field
                 label="E-mail"

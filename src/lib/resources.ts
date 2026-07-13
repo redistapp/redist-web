@@ -9,14 +9,25 @@ import type {
   IntentionsResponse,
   MatchesResponse,
   StateItem,
+  StripeCustomer,
+  StripeSubscriptionsResponse,
+  SubscriptionCreated,
 } from '@/types'
 
-/** Lê o corpo de erro (a API responde em texto puro na maioria dos casos). */
+/** Lê o corpo de erro. A API responde em texto puro na maioria das rotas, mas
+ *  os validators do Adonis (422) devolvem {errors:[{field,rule,message}]}. */
 async function readError(res: Response, fallback: string): Promise<string> {
   const text = await res.text().catch(() => '')
   if (!text) return fallback
   try {
-    const parsed = JSON.parse(text) as { error?: string; message?: string }
+    const parsed = JSON.parse(text) as {
+      error?: string
+      message?: string
+      errors?: { message?: string }[]
+    }
+    if (parsed.errors?.length) {
+      return parsed.errors.map((e) => e.message).filter(Boolean).join(' ')
+    }
     return parsed.error ?? parsed.message ?? text
   } catch {
     return text
@@ -70,10 +81,68 @@ export async function updateProfessional(
   if (!res.ok) throw new Error(await readError(res, 'Não foi possível salvar.'))
 }
 
+/** Envia a foto de perfil (multipart/form-data). Aceita jpg/png/jpeg, até 5MB. */
+export async function uploadPhoto(file: File): Promise<void> {
+  const formData = new FormData()
+  formData.append('file', file)
+  const res = await apiRequest('/user/photo', { method: 'POST', body: formData })
+  if (!res.ok) throw new Error(await readError(res, 'Não foi possível enviar a foto.'))
+}
+
+export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+  const res = await apiRequest('/users/change-password', {
+    method: 'POST',
+    body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+  })
+  if (!res.ok) throw new Error(await readError(res, 'Não foi possível alterar a senha.'))
+}
+
+/** Exclusão de conta (LGPD). Irreversível — exige a senha atual. */
+export async function deleteAccount(currentPassword: string): Promise<void> {
+  const res = await apiRequest('/users/delete-account', {
+    method: 'POST',
+    body: JSON.stringify({ current_password: currentPassword }),
+  })
+  if (!res.ok) throw new Error(await readError(res, 'Não foi possível remover a conta.'))
+}
+
+// --- Denúncias / feedback -------------------------------------------------------
+
+/** Reporta um problema/feedback livre sobre o site (não é sobre outro usuário). */
+export async function sendFeedback(report: string): Promise<void> {
+  const res = await apiRequest('/report', {
+    method: 'POST',
+    body: JSON.stringify({ report }),
+  })
+  if (!res.ok) throw new Error(await readError(res, 'Não foi possível enviar.'))
+}
+
+/** Denuncia outro usuário (ex.: a partir de um match). */
+export async function reportUser(
+  reportedUser: number,
+  reason: string,
+  observation?: string,
+): Promise<void> {
+  const res = await apiRequest('/report/user', {
+    method: 'POST',
+    body: JSON.stringify({ reported_user: reportedUser, reason, observation }),
+  })
+  if (!res.ok) throw new Error(await readError(res, 'Não foi possível enviar a denúncia.'))
+}
+
 // --- Intenções ----------------------------------------------------------------
 
 export function getIntentions(): Promise<IntentionsResponse> {
   return getJson<IntentionsResponse>('/intentions')
+}
+
+/** Erro específico para quando o servidor recusa a intenção por limite do
+ *  plano gratuito (HTTP 402). Permite à UI oferecer um CTA para o Premium. */
+export class PremiumRequiredError extends Error {
+  constructor(message = 'Você atingiu o limite de intenções do plano gratuito.') {
+    super(message)
+    this.name = 'PremiumRequiredError'
+  }
 }
 
 export async function createIntention(institutionId: number): Promise<void> {
@@ -81,6 +150,9 @@ export async function createIntention(institutionId: number): Promise<void> {
     method: 'PUT',
     body: JSON.stringify({ destination: institutionId }),
   })
+  if (res.status === 402) {
+    throw new PremiumRequiredError()
+  }
   if (!res.ok) {
     throw new Error(
       await readError(res, 'Não foi possível cadastrar a intenção.'),
@@ -99,7 +171,7 @@ export function getMatches(): Promise<MatchesResponse> {
   return getJson<MatchesResponse>('/matches')
 }
 
-// --- Plano (Stripe) — só leitura do status nesta fase -------------------------
+// --- Plano / Premium (Stripe) --------------------------------------------------
 
 export async function getPlanStatus(): Promise<{ subscribed: boolean }> {
   try {
@@ -108,6 +180,32 @@ export async function getPlanStatus(): Promise<{ subscribed: boolean }> {
   } catch {
     return { subscribed: false }
   }
+}
+
+/** Cria (se preciso) o customer Stripe do usuário logado e devolve o status. */
+export function getStripeCustomer(): Promise<StripeCustomer> {
+  return getJson<StripeCustomer>('/stripe/customer')
+}
+
+/** Detalhes das subscriptions do customer (status, fim do período, etc.). */
+export function getStripeSubscriptions(): Promise<StripeSubscriptionsResponse> {
+  return getJson<StripeSubscriptionsResponse>('/stripe/subscriptions')
+}
+
+/**
+ * Cria (ou reaproveita) a subscription mensal Premium do usuário logado.
+ * O servidor deriva o customer a partir da sessão — não é preciso (nem
+ * possível) informar um customer_id pelo cliente.
+ */
+export async function createMonthlySubscription(): Promise<SubscriptionCreated> {
+  const res = await apiRequest('/stripe/subscription/monthly', { method: 'POST', body: '{}' })
+  if (!res.ok) throw new Error(await readError(res, 'Não foi possível iniciar a assinatura.'))
+  return (await res.json()) as SubscriptionCreated
+}
+
+export async function cancelSubscription(): Promise<void> {
+  const res = await apiRequest('/stripe/subscription/cancel', { method: 'POST', body: '{}' })
+  if (!res.ok) throw new Error(await readError(res, 'Não foi possível cancelar a assinatura.'))
 }
 
 // --- Dados auxiliares (dropdowns) ---------------------------------------------

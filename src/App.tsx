@@ -7,6 +7,7 @@ import DashboardPage from '@/pages/app/DashboardPage'
 import IntentionsPage from '@/pages/app/IntentionsPage'
 import MatchesPage from '@/pages/app/MatchesPage'
 import ProfilePage from '@/pages/app/ProfilePage'
+import PremiumPage from '@/pages/app/PremiumPage'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { AppShell } from '@/components/layout/AppShell'
 
@@ -30,6 +31,7 @@ function App() {
         <Route path="/painel/intencoes" element={<IntentionsPage />} />
         <Route path="/painel/matches" element={<MatchesPage />} />
         <Route path="/painel/perfil" element={<ProfilePage />} />
+        <Route path="/painel/premium" element={<PremiumPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

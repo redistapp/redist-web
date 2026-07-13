@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
-import type { ReactNode } from 'react'
-import { Pencil, Search } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import type { ChangeEvent, ReactNode } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { Pencil, Search, KeyRound, Trash2, Camera } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Field } from '@/components/ui/Field'
 import { Select } from '@/components/ui/Select'
@@ -8,13 +9,18 @@ import { Modal } from '@/components/ui/Modal'
 import { Spinner } from '@/components/ui/Spinner'
 import { PageHeader, ErrorState } from '@/components/ui/States'
 import { useAsync } from '@/lib/useAsync'
+import { useSession } from '@/contexts/SessionContext'
 import type { CboItem, FullUser, IdName, StateItem } from '@/types'
 import {
   getFullUser,
   updateContact,
   updateProfessional,
+  changePassword,
+  deleteAccount,
+  uploadPhoto,
   getStates,
   getCities,
+  getInstitutionsByCity,
   getCareers,
   getOffices,
   getGeneralAreas,
@@ -158,6 +164,12 @@ function EditProfessionalModal({
   onSaved: () => void
 }) {
   const prof = user.professional
+  const [states, setStates] = useState<StateItem[]>([])
+  const [cities, setCities] = useState<IdName[]>([])
+  const [institutions, setInstitutions] = useState<IdName[]>([])
+  const [stateId, setStateId] = useState(String(prof?.institution?.state?.id ?? ''))
+  const [cityId, setCityId] = useState(String(prof?.institution?.city?.id ?? ''))
+  const [institutionId, setInstitutionId] = useState(String(prof?.institution?.id ?? ''))
   const [careers, setCareers] = useState<IdName[]>([])
   const [offices, setOffices] = useState<IdName[]>([])
   const [generals, setGenerals] = useState<IdName[]>([])
@@ -176,13 +188,30 @@ function EditProfessionalModal({
 
   useEffect(() => {
     if (!open) return
+    getStates().then(setStates).catch(() => undefined)
     getCareers().then(setCareers).catch(() => undefined)
     getGeneralAreas().then(setGenerals).catch(() => undefined)
+    if (stateId) getCities(Number(stateId)).then(setCities).catch(() => undefined)
+    if (cityId) getInstitutionsByCity(Number(cityId)).then(setInstitutions).catch(() => undefined)
     if (careerId) getOffices(Number(careerId)).then(setOffices).catch(() => undefined)
     if (generalId) getSpecificAreas(Number(generalId)).then(setSpecifics).catch(() => undefined)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
 
+  function onStateChange(v: string) {
+    setStateId(v)
+    setCityId('')
+    setCities([])
+    setInstitutionId('')
+    setInstitutions([])
+    if (v) getCities(Number(v)).then(setCities).catch(() => undefined)
+  }
+  function onCityChange(v: string) {
+    setCityId(v)
+    setInstitutionId('')
+    setInstitutions([])
+    if (v) getInstitutionsByCity(Number(v)).then(setInstitutions).catch(() => undefined)
+  }
   function onCareerChange(v: string) {
     setCareerId(v)
     setOfficeId('')
@@ -205,16 +234,15 @@ function EditProfessionalModal({
   }
 
   async function handleSave() {
-    if (!officeId || !specificId || !registration) {
-      setError('Preencha cargo, área específica e matrícula.')
+    if (!institutionId || !officeId || !specificId || !registration) {
+      setError('Preencha instituição, cargo, área específica e matrícula.')
       return
     }
     setSaving(true)
     setError(null)
     try {
       await updateProfessional(user.id, {
-        // A instituição não é alterada aqui — mantém a atual.
-        institution_id: prof?.institution?.id ?? 0,
+        institution_id: Number(institutionId),
         registration,
         office_career: Number(officeId),
         office_specialization: Number(specificId),
@@ -233,10 +261,32 @@ function EditProfessionalModal({
     <Modal open={open} onClose={onClose} title="Editar dados profissionais">
       <div className="flex max-h-[70vh] flex-col gap-4 overflow-y-auto">
         {error && <ErrorState message={error} />}
-        <div className="rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-600">
-          Instituição: <span className="font-medium text-navy-900">{prof?.institution?.name}</span>
-          <span className="block text-xs text-slate-500">A troca de instituição será feita em breve.</span>
+        <p className="text-sm text-slate-600">
+          Instituição atual: <span className="font-medium text-navy-900">{prof?.institution?.name}</span>
+        </p>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Select
+            label="Estado da instituição"
+            value={stateId}
+            onChange={(e) => onStateChange(e.target.value)}
+            options={states.map((s) => ({ value: s.id, label: s.name }))}
+          />
+          <Select
+            label="Cidade da instituição"
+            value={cityId}
+            onChange={(e) => onCityChange(e.target.value)}
+            disabled={!stateId || cities.length === 0}
+            options={cities.map((c) => ({ value: c.id, label: c.name }))}
+          />
         </div>
+        <Select
+          label="Instituição"
+          value={institutionId}
+          onChange={(e) => setInstitutionId(e.target.value)}
+          disabled={!cityId || institutions.length === 0}
+          hint={cityId && institutions.length === 0 ? 'Nenhuma instituição nesta cidade.' : undefined}
+          options={institutions.map((i) => ({ value: i.id, label: i.name }))}
+        />
         <Select
           label="Carreira"
           value={careerId}
@@ -315,9 +365,233 @@ function EditProfessionalModal({
   )
 }
 
+function ChangePasswordModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
+
+  function handleClose() {
+    setCurrentPassword('')
+    setNewPassword('')
+    setConfirmPassword('')
+    setError(null)
+    setSuccess(false)
+    onClose()
+  }
+
+  async function handleSave() {
+    setError(null)
+    if (newPassword.length < 8) {
+      setError('A nova senha deve ter ao menos 8 caracteres.')
+      return
+    }
+    if (newPassword !== confirmPassword) {
+      setError('A confirmação não bate com a nova senha.')
+      return
+    }
+    setSaving(true)
+    try {
+      await changePassword(currentPassword, newPassword)
+      setSuccess(true)
+      setCurrentPassword('')
+      setNewPassword('')
+      setConfirmPassword('')
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Não foi possível alterar a senha.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <Modal open={open} onClose={handleClose} title="Alterar senha">
+      <div className="flex flex-col gap-4">
+        {error && <ErrorState message={error} />}
+        {success ? (
+          <div className="rounded-lg border border-match-200 bg-match-50 px-4 py-3 text-sm text-match-700">
+            Senha alterada com sucesso.
+          </div>
+        ) : (
+          <>
+            <Field
+              label="Senha atual"
+              type="password"
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              autoComplete="current-password"
+            />
+            <Field
+              label="Nova senha"
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              hint="Use ao menos 8 caracteres."
+              autoComplete="new-password"
+            />
+            <Field
+              label="Confirmar nova senha"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              autoComplete="new-password"
+            />
+          </>
+        )}
+        <div className="mt-2 flex justify-end gap-2">
+          <Button variant="secondary" onClick={handleClose}>
+            {success ? 'Fechar' : 'Cancelar'}
+          </Button>
+          {!success && (
+            <Button
+              variant="match"
+              onClick={handleSave}
+              disabled={saving || !currentPassword || !newPassword || !confirmPassword}
+            >
+              {saving ? 'Salvando…' : 'Salvar'}
+            </Button>
+          )}
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
+function DeleteAccountModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const { logout } = useSession()
+  const navigate = useNavigate()
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [confirmText, setConfirmText] = useState('')
+  const [deleting, setDeleting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  function handleClose() {
+    if (deleting) return
+    setCurrentPassword('')
+    setConfirmText('')
+    setError(null)
+    onClose()
+  }
+
+  async function handleDelete() {
+    setError(null)
+    setDeleting(true)
+    try {
+      await deleteAccount(currentPassword)
+      await logout()
+      navigate('/login', { replace: true })
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Não foi possível remover a conta.')
+      setDeleting(false)
+    }
+  }
+
+  return (
+    <Modal open={open} onClose={handleClose} title="Excluir conta">
+      <div className="flex flex-col gap-4">
+        {error && <ErrorState message={error} />}
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          Essa ação é <strong>irreversível</strong>. Seus dados pessoais serão anonimizados, suas
+          intenções de permuta serão desativadas e você será desconectado de todos os
+          dispositivos.
+        </div>
+        <Field
+          label="Digite EXCLUIR para confirmar"
+          value={confirmText}
+          onChange={(e) => setConfirmText(e.target.value)}
+          placeholder="EXCLUIR"
+        />
+        <Field
+          label="Senha atual"
+          type="password"
+          value={currentPassword}
+          onChange={(e) => setCurrentPassword(e.target.value)}
+          autoComplete="current-password"
+        />
+        <div className="mt-2 flex justify-end gap-2">
+          <Button variant="secondary" onClick={handleClose} disabled={deleting}>
+            Cancelar
+          </Button>
+          <Button
+            variant="secondary"
+            className="border-red-300 text-red-700 hover:border-red-400 hover:bg-red-50"
+            onClick={handleDelete}
+            disabled={deleting || confirmText !== 'EXCLUIR' || !currentPassword}
+          >
+            {deleting ? 'Excluindo…' : 'Excluir minha conta'}
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
+function AvatarUploader({ user, onUploaded }: { user: FullUser; onUploaded: () => void }) {
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [uploading, setUploading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const initials =
+    ((user.profile?.first_name?.[0] ?? '') + (user.profile?.last_name?.[0] ?? '')).toUpperCase() ||
+    '?'
+  const photoUrl = user.profile?.photo_url
+  const hasPhoto = Boolean(photoUrl) && !photoUrl?.startsWith('$refresh')
+
+  async function handleFile(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    setError(null)
+    setUploading(true)
+    try {
+      await uploadPhoto(file)
+      onUploaded()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Não foi possível enviar a foto.')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  return (
+    <div className="mb-6 flex items-center gap-4">
+      {hasPhoto ? (
+        <img src={photoUrl} alt="" className="size-16 rounded-full object-cover" />
+      ) : (
+        <span className="grid size-16 shrink-0 place-items-center rounded-full bg-brand-50 text-lg font-semibold text-brand-700">
+          {initials}
+        </span>
+      )}
+      <div>
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/jpg"
+          className="hidden"
+          onChange={handleFile}
+        />
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => inputRef.current?.click()}
+          disabled={uploading}
+        >
+          <Camera size={15} />
+          {uploading ? 'Enviando…' : 'Alterar foto'}
+        </Button>
+        {error && <p className="mt-1.5 text-sm text-red-600">{error}</p>}
+      </div>
+    </div>
+  )
+}
+
 export default function ProfilePage() {
   const { data, loading, error, reload } = useAsync(getFullUser)
   const [editing, setEditing] = useState<'personal' | 'professional' | null>(null)
+  const [changingPassword, setChangingPassword] = useState(false)
+  const [deletingAccount, setDeletingAccount] = useState(false)
 
   return (
     <div>
@@ -325,6 +599,8 @@ export default function ProfilePage() {
 
       {loading && <Spinner />}
       {error && <ErrorState message={error} />}
+
+      {data && <AvatarUploader user={data} onUploaded={reload} />}
 
       {data && (
         <div className="grid gap-6 lg:grid-cols-2">
@@ -367,6 +643,39 @@ export default function ProfilePage() {
             <Row label="Área específica" value={data.professional?.knowledge_area?.specific?.name} />
             <Row label="CBO" value={data.professional?.cbo?.title} />
           </Card>
+
+          <Card
+            title="Segurança"
+            action={
+              <Button variant="secondary" size="sm" onClick={() => setChangingPassword(true)}>
+                <KeyRound size={15} />
+                Alterar senha
+              </Button>
+            }
+          >
+            <p className="py-1 text-sm text-slate-600">
+              Troque sua senha periodicamente para manter sua conta segura.
+            </p>
+          </Card>
+
+          <Card
+            title="Excluir conta"
+            action={
+              <Button
+                variant="secondary"
+                size="sm"
+                className="border-red-300 text-red-700 hover:border-red-400 hover:bg-red-50"
+                onClick={() => setDeletingAccount(true)}
+              >
+                <Trash2 size={15} />
+                Excluir conta
+              </Button>
+            }
+          >
+            <p className="py-1 text-sm text-slate-600">
+              Remove seus dados pessoais permanentemente e encerra sua participação no Redist.
+            </p>
+          </Card>
         </div>
       )}
 
@@ -383,6 +692,14 @@ export default function ProfilePage() {
             onClose={() => setEditing(null)}
             user={data}
             onSaved={reload}
+          />
+          <ChangePasswordModal
+            open={changingPassword}
+            onClose={() => setChangingPassword(false)}
+          />
+          <DeleteAccountModal
+            open={deletingAccount}
+            onClose={() => setDeletingAccount(false)}
           />
         </>
       )}

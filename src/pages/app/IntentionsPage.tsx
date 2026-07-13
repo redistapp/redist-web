@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Plus, Trash2, Building2 } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Plus, Trash2, Building2, Crown } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Select } from '@/components/ui/Select'
 import { Modal } from '@/components/ui/Modal'
@@ -14,6 +15,7 @@ import {
   getStates,
   getCities,
   getInstitutionsByCity,
+  PremiumRequiredError,
 } from '@/lib/resources'
 
 function AddIntentionModal({
@@ -33,6 +35,7 @@ function AddIntentionModal({
   const [institutionId, setInstitutionId] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [needsPremium, setNeedsPremium] = useState(false)
 
   useEffect(() => {
     if (open) getStates().then(setStates).catch(() => setError('Erro ao carregar estados.'))
@@ -56,12 +59,18 @@ function AddIntentionModal({
     if (!institutionId) return
     setSaving(true)
     setError(null)
+    setNeedsPremium(false)
     try {
       await createIntention(Number(institutionId))
       onCreated()
       onClose()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Não foi possível cadastrar.')
+      if (e instanceof PremiumRequiredError) {
+        setError(e.message)
+        setNeedsPremium(true)
+      } else {
+        setError(e instanceof Error ? e.message : 'Não foi possível cadastrar.')
+      }
     } finally {
       setSaving(false)
     }
@@ -74,6 +83,16 @@ function AddIntentionModal({
           Escolha a instituição para a qual você deseja ir.
         </p>
         {error && <ErrorState message={error} />}
+        {needsPremium && (
+          <Link
+            to="/painel/premium"
+            onClick={onClose}
+            className="flex items-center gap-2.5 rounded-lg bg-match-50 px-4 py-3 text-sm font-medium text-match-700 hover:bg-match-100"
+          >
+            <Crown size={17} className="shrink-0" />
+            Assine o Premium para ter até 3 intenções ativas
+          </Link>
+        )}
         <Select
           label="Estado de destino"
           value={stateId}

@@ -23,10 +23,15 @@ export type ProfileData = {
   instagram?: string | null
 }
 
+export type InstitutionData = IdName & {
+  city?: IdName | null
+  state?: { id: number; name: string; abbreviation?: string } | null
+}
+
 export type ProfessionalData = {
   office?: IdName | null
   career?: IdName | null
-  institution?: IdName | null
+  institution?: InstitutionData | null
   registration?: string
   knowledge_area?: {
     general?: IdName | null
@@ -64,4 +69,34 @@ export type Match = {
 export type MatchesResponse = {
   total: number
   matches: Match[]
+}
+
+// --- Stripe / Premium -----------------------------------------------------
+
+export type StripeCustomer = {
+  customer_id: string
+  subscribed: boolean
+}
+
+/** Resposta de POST /stripe/subscription/monthly (formato do Stripe SDK). */
+export type SubscriptionCreated = {
+  subscriptionId: string
+  latestInvoice?: {
+    payment_intent?: {
+      client_secret?: string | null
+      status?: string
+    } | string | null
+  } | null
+}
+
+/** Item relevante de GET /stripe/subscriptions (lista de subscriptions do Stripe). */
+export type StripeSubscription = {
+  id: string
+  status: string
+  current_period_end?: number
+  cancel_at_period_end?: boolean
+}
+
+export type StripeSubscriptionsResponse = {
+  data: StripeSubscription[]
 }

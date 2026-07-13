@@ -26,6 +26,9 @@ services:
       API_TOKEN: ${API_TOKEN:-}
       # true só atrás de HTTPS.
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      # Chave publicável do Stripe (pk_test_.../pk_live_...), repassada ao
+      # front via GET /auth/config. Segura de expor; a secreta fica no redist-server.
+      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-}
     extra_hosts:
       - 'host.docker.internal:host-gateway'
     expose:
