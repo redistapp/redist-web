@@ -4,9 +4,9 @@ Orientações para o Claude Code trabalhar neste repositório. Leia antes de edi
 
 ## O que é
 
-Site/aplicação **web** do **Redist**, sistema de **redistribuição e permuta de servidores públicos**. É a nova interface (substituindo, aos poucos, o app mobile `redist-expo-app`), com foco em **credibilidade, UX e desempenho**. Consome a API `redist-server`.
+Site/aplicação **web** do **Redist**, sistema de **redistribuição e permuta de servidores públicos**. É **a** interface do produto (o app mobile `redist-expo-app` foi descontinuado em ago/2026), com foco em **credibilidade, UX e desempenho**. Consome a API `redist-server`.
 
-Repositórios irmãos: `redist-server` (API), `redist-expo-app` (app mobile legado), `lambda-functions`.
+Repositórios irmãos: `redist-server` (API), `redist-expo-app` (app mobile, descontinuado em ago/2026), `lambda-functions`.
 
 > Decisão de projeto: o site foi iniciado para avaliar **web × app**. A ideia é adotar apenas as **ideias gerais** do app antigo (domínio e fluxos), com UI redesenhada do zero. **Não** usar Expo/React Native aqui.
 

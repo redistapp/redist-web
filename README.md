@@ -2,7 +2,7 @@
 
 Site e aplicação **web** do **Redist**, sistema que facilita a **redistribuição e permuta de servidores públicos**. Interface moderna, responsiva e leve, que consome a API [`redist-server`](../redist-server).
 
-Este projeto está sendo desenvolvido para avaliar o formato **web** frente ao app mobile ([`redist-expo-app`](../redist-expo-app)), com UI redesenhada do zero.
+Interface principal do produto, com UI redesenhada do zero. Substituiu o app mobile ([`redist-expo-app`](../redist-expo-app)), descontinuado em ago/2026.
 
 ## Stack
 
@@ -71,5 +71,5 @@ Detalhes de arquitetura, design system (paleta e convenções) e próximos passo
 
 - [`redist-bff`](../redist-bff) — backend-for-frontend (guarda o ApiToken e a sessão)
 - [`redist-server`](../redist-server) — API (AdonisJS)
-- [`redist-expo-app`](../redist-expo-app) — app mobile (Expo)
+- [`redist-expo-app`](../redist-expo-app) — app mobile (Expo) — descontinuado em ago/2026, mantido como legado
 - [`lambda-functions`](../lambda-functions) — funções AWS Lambda
