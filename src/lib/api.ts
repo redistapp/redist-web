@@ -77,6 +77,20 @@ export async function recoverPasswordRequest(cpf: string, dateBirth: string): Pr
   }).catch(() => undefined)
 }
 
+/** Conclui a redefinição com o token recebido por e-mail. Diferente de
+ *  `recoverPasswordRequest`, aqui o erro importa: o usuário precisa saber que o
+ *  link expirou ou já foi usado para pedir outro. */
+export async function resetPasswordRequest(token: string, newPassword: string): Promise<void> {
+  const res = await request('/auth/reset-password', {
+    method: 'POST',
+    body: JSON.stringify({ token, new_password: newPassword }),
+  })
+  if (!res.ok) {
+    const data = (await res.json().catch(() => ({}))) as { error?: string }
+    throw new Error(data.error ?? 'Não foi possível redefinir a senha. Solicite um novo link.')
+  }
+}
+
 /** Configuração pública da BFF (hoje: chave publicável do Stripe). GET, sem CSRF. */
 export async function configRequest(): Promise<{ stripePublishableKey: string }> {
   const res = await request('/auth/config')

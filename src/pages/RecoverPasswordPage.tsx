@@ -24,7 +24,7 @@ export default function RecoverPasswordPage() {
   return (
     <AuthLayout
       title="Recuperar senha"
-      subtitle="Confirme seus dados e enviaremos uma nova senha para o seu e-mail."
+      subtitle="Confirme seus dados e enviaremos um link para você criar uma nova senha."
       footer={
         <Link to="/login" className="font-medium text-brand-700 hover:underline">
           Voltar para o login
@@ -38,7 +38,7 @@ export default function RecoverPasswordPage() {
           </span>
           <p className="mt-4 font-medium text-navy-900">Verifique seu e-mail</p>
           <p className="mt-1 text-sm text-slate-600">
-            Se os dados conferirem, enviamos uma nova senha para o e-mail cadastrado.
+            Se os dados conferirem, enviamos um link de redefinição para o e-mail cadastrado. Ele vale por 1 hora e só pode ser usado uma vez.
           </p>
         </div>
       ) : (
@@ -59,7 +59,7 @@ export default function RecoverPasswordPage() {
             required
           />
           <Button type="submit" variant="match" size="lg" className="mt-2 w-full" disabled={loading}>
-            {loading ? 'Enviando…' : 'Enviar nova senha'}
+            {loading ? 'Enviando…' : 'Enviar link de redefinição'}
           </Button>
         </form>
       )}

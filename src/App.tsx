@@ -3,6 +3,7 @@ import LandingPage from '@/pages/LandingPage'
 import LoginPage from '@/pages/LoginPage'
 import RegisterPage from '@/pages/RegisterPage'
 import RecoverPasswordPage from '@/pages/RecoverPasswordPage'
+import ResetPasswordPage from '@/pages/ResetPasswordPage'
 import DashboardPage from '@/pages/app/DashboardPage'
 import IntentionsPage from '@/pages/app/IntentionsPage'
 import MatchesPage from '@/pages/app/MatchesPage'
@@ -24,6 +25,8 @@ function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/cadastro" element={<RegisterPage />} />
       <Route path="/recuperar-senha" element={<RecoverPasswordPage />} />
+      {/* Destino do link enviado por e-mail: /redefinir-senha?token=… */}
+      <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
 
       {/* Área logada — layout compartilhado protegido */}
       <Route
