@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { SessionUser } from '@/lib/api'
-import { loginRequest, logoutRequest, meRequest } from '@/lib/api'
+import { adminLoginRequest, loginRequest, logoutRequest, meRequest } from '@/lib/api'
 
 type Status = 'loading' | 'authed' | 'guest'
 
@@ -9,6 +9,7 @@ type SessionValue = {
   user: SessionUser | null
   status: Status
   login: (cpf: string, password: string) => Promise<void>
+  adminLogin: (cpf: string, password: string) => Promise<void>
   logout: () => Promise<void>
 }
 
@@ -38,6 +39,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     setStatus('authed')
   }
 
+  const adminLogin = async (cpf: string, password: string) => {
+    const u = await adminLoginRequest(cpf, password)
+    setUser(u)
+    setStatus('authed')
+  }
+
   const logout = async () => {
     await logoutRequest()
     setUser(null)
@@ -45,7 +52,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <SessionContext.Provider value={{ user, status, login, logout }}>
+    <SessionContext.Provider value={{ user, status, login, adminLogin, logout }}>
       {children}
     </SessionContext.Provider>
   )

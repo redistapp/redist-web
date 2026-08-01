@@ -5,6 +5,7 @@
 export type SessionUser = {
   id: number
   cpf: string
+  is_admin?: boolean
   profile?: {
     first_name?: string
     last_name?: string
@@ -30,6 +31,21 @@ async function request(path: string, init?: RequestInit): Promise<Response> {
 
 export async function loginRequest(cpf: string, password: string): Promise<SessionUser> {
   const res = await request('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ cpf, password }),
+  })
+  if (!res.ok) {
+    const data = (await res.json().catch(() => ({}))) as { error?: string }
+    throw new Error(data.error ?? 'Não foi possível entrar. Tente novamente.')
+  }
+  const data = (await res.json()) as { user: SessionUser }
+  return data.user
+}
+
+/** Login do painel administrativo — mesma sessão (cookie), autentica contra
+ *  /loginadm na API (recusa quem não está na tabela admins). */
+export async function adminLoginRequest(cpf: string, password: string): Promise<SessionUser> {
+  const res = await request('/auth/admin-login', {
     method: 'POST',
     body: JSON.stringify({ cpf, password }),
   })

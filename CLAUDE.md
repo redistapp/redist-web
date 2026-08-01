@@ -64,10 +64,13 @@ src/
   pages/
     LandingPage, LoginPage, RegisterPage (cadastro multietapa), RecoverPasswordPage
     app/               DashboardPage, IntentionsPage, MatchesPage, ProfilePage, PremiumPage
+    admin/             AdminLoginPage, InstitutionsPage, ReportsPage, UsersPage
 public/favicon.svg     marca do Redist
 ```
 
 Área logada em `/painel` (layout route: `ProtectedRoute` → `AppShell` → `<Outlet/>`): `/painel` (dashboard), `/painel/intencoes`, `/painel/matches`, `/painel/perfil`, `/painel/premium`. Dados via `lib/resources.ts` + `useAsync`. Cadastro é multietapa (`useState` único + dropdowns encadeados) → `registerUser` → auto-login.
+
+**Painel administrativo em `/admin`** (layout route separada: `AdminProtectedRoute` → `AdminShell` → `<Outlet/>`, nada a ver com `/painel`): `/admin/login` (login próprio, chama `adminLoginRequest`/`POST /auth/admin-login` na BFF — nunca `/auth/login`, que bloqueia contas admin), `/admin/instituicoes` (busca + criar/editar instituição, `lib/adminResources.ts`), `/admin/denuncias` (lista feedback livre + denúncias de usuário, somente leitura), `/admin/usuarios` (busca por nome/e-mail/CPF + modal de detalhe com suspender/reativar conta — não deixa suspender admin). A lista de `/admin/denuncias` linka o nome do usuário denunciado para `/admin/usuarios?search=<email>` (lido via `useSearchParams` em `UsersPage`), fechando o ciclo denúncia→ação sem precisar copiar/colar nada. `AdminProtectedRoute` verifica `user.is_admin` (vem de `GET /user`); mesmo cookie de sessão da área de membros, então só dá pra estar logado numa OU na outra por vez no mesmo navegador. Não existe fluxo de auto-promoção a admin — a linha em `admins` é inserida direto no banco.
 
 **Premium/Stripe (`pages/app/PremiumPage.tsx`):** usa Stripe Elements (`@stripe/react-stripe-js`). Fluxo: `getStripeCustomer()` (GET `/api/stripe/customer`, cria o customer se preciso) → botão "Assinar" chama `createMonthlySubscription()` (POST `/api/stripe/subscription/monthly`, **sem** enviar `customer_id` — o servidor deriva o customer da sessão) → extrai `client_secret` de `latestInvoice.payment_intent` → monta `<Elements><PaymentElement/></Elements>` num `Modal` → `stripe.confirmPayment({redirect:'if_required'})` → em sucesso, recarrega o status. Cancelamento via `cancelSubscription()` (POST `/stripe/subscription/cancel`, com confirmação em modal). A chave publicável vem de `GET /auth/config` (rota da BFF, não do `/api/*`) — nunca embuta a chave no build.
 

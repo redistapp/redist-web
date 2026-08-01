@@ -8,8 +8,14 @@ import IntentionsPage from '@/pages/app/IntentionsPage'
 import MatchesPage from '@/pages/app/MatchesPage'
 import ProfilePage from '@/pages/app/ProfilePage'
 import PremiumPage from '@/pages/app/PremiumPage'
+import AdminLoginPage from '@/pages/admin/AdminLoginPage'
+import InstitutionsPage from '@/pages/admin/InstitutionsPage'
+import ReportsPage from '@/pages/admin/ReportsPage'
+import UsersPage from '@/pages/admin/UsersPage'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
+import { AdminProtectedRoute } from '@/components/AdminProtectedRoute'
 import { AppShell } from '@/components/layout/AppShell'
+import { AdminShell } from '@/components/layout/AdminShell'
 
 function App() {
   return (
@@ -32,6 +38,20 @@ function App() {
         <Route path="/painel/matches" element={<MatchesPage />} />
         <Route path="/painel/perfil" element={<ProfilePage />} />
         <Route path="/painel/premium" element={<PremiumPage />} />
+      </Route>
+
+      {/* Painel administrativo — login próprio (/loginadm), separado da área de membros */}
+      <Route path="/admin/login" element={<AdminLoginPage />} />
+      <Route
+        element={
+          <AdminProtectedRoute>
+            <AdminShell />
+          </AdminProtectedRoute>
+        }
+      >
+        <Route path="/admin/instituicoes" element={<InstitutionsPage />} />
+        <Route path="/admin/denuncias" element={<ReportsPage />} />
+        <Route path="/admin/usuarios" element={<UsersPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

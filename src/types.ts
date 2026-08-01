@@ -26,6 +26,10 @@ export type ProfileData = {
 export type InstitutionData = IdName & {
   city?: IdName | null
   state?: { id: number; name: string; abbreviation?: string } | null
+  // Só presentes na resposta de GET /admin/institutions (painel admin).
+  address?: string
+  cep?: string
+  nature_id?: number
 }
 
 export type ProfessionalData = {
@@ -99,4 +103,44 @@ export type StripeSubscription = {
 
 export type StripeSubscriptionsResponse = {
   data: StripeSubscription[]
+}
+
+// --- Painel administrativo --------------------------------------------------
+
+export type ReportedUser = { name: string; email: string } | null
+
+export type FeedbackReport = {
+  id: number
+  report: string
+  created_at: string
+  user: ReportedUser
+}
+
+export type UserReportItem = {
+  id: number
+  reason: string
+  observation: string | null
+  created_at: string
+  whistleblower: ReportedUser
+  reported: ReportedUser
+}
+
+export type AdminUserListItem = {
+  id: number
+  cpf: string
+  name: string
+  email: string
+  is_active: boolean
+  is_deleted: boolean
+  is_admin: boolean
+}
+
+export type AdminUserDetail = {
+  id: number
+  cpf: string
+  is_active: boolean
+  is_deleted: boolean
+  is_admin: boolean
+  profile: ProfileData | null
+  professional: ProfessionalData | null
 }
