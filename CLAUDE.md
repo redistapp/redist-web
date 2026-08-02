@@ -76,7 +76,7 @@ public/favicon.svg     marca do Redist
 
 Em `IntentionsPage`, `createIntention` lança `PremiumRequiredError` quando a API responde **402** (limite do plano gratuito) — o modal mostra um link para `/painel/premium` nesse caso.
 
-⚠️ **Nota de ambiente:** `POST /intentions` (pré-existente, não é código deste front) chama `user.stripeCustomerId()` no servidor para checar o plano — **sem `STRIPE_SECRET_KEY` configurada, criar intenções falha também**, não só o Premium. Isso não é um bug introduzido aqui; é um acoplamento existente no `redist-server`.
+**Nota de ambiente (atualizada):** `POST /intentions` **não** depende mais do Stripe para a cota gratuita. A primeira intenção é criada sem tocar em `user.stripeCustomerId()`, e o Stripe só é consultado acima do limite grátis — e, se falhar, degrada para "não-premium" em vez de derrubar a requisição. Sem `STRIPE_SECRET_KEY` configurada, portanto, **criar a primeira intenção funciona**; só o Premium fica indisponível. (Isto era verdade até jul/2026 e foi corrigido no `redist-server`.)
 
 Alias de import: `@/` → `src/` (configurado em `vite.config.ts` e `tsconfig.app.json`).
 
