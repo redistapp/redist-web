@@ -72,6 +72,7 @@ function EditPersonalModal({
   const [lastName, setLastName] = useState(user.profile?.last_name ?? '')
   const [phone, setPhone] = useState(user.profile?.phone ?? '')
   const [email, setEmail] = useState(user.profile?.email ?? '')
+  const [instagram, setInstagram] = useState(user.profile?.instagram ?? '')
   const [states, setStates] = useState<StateItem[]>([])
   const [cities, setCities] = useState<IdName[]>([])
   const [stateId, setStateId] = useState(String(user.profile?.state?.id ?? ''))
@@ -104,6 +105,7 @@ function EditPersonalModal({
         email,
         home_city: Number(cityId) || user.profile?.city?.id || 0,
         photo_url: user.profile?.photo_url,
+        instagram,
       })
       onSaved()
       onClose()
@@ -124,6 +126,13 @@ function EditPersonalModal({
         </div>
         <Field label="Telefone" value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" />
         <Field label="E-mail" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+        <Field
+          label="Instagram"
+          value={instagram}
+          onChange={(e) => setInstagram(e.target.value)}
+          placeholder="@seu.usuario"
+          hint="Opcional. Aparece para quem der match com você."
+        />
         <div className="grid gap-4 sm:grid-cols-2">
           <Select
             label="Estado"
@@ -618,6 +627,7 @@ export default function ProfilePage() {
             <Row label="Nascimento" value={data.profile?.date_birth} />
             <Row label="Telefone" value={data.profile?.phone} />
             <Row label="E-mail" value={data.profile?.email} />
+            <Row label="Instagram" value={data.profile?.instagram || '—'} />
             <Row
               label="Cidade"
               value={[data.profile?.city?.name, data.profile?.state?.abbreviation]

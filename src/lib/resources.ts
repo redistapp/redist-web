@@ -55,6 +55,7 @@ export async function updateContact(
     email: string
     home_city: number
     photo_url?: string
+    instagram?: string
   },
 ): Promise<void> {
   const res = await apiRequest(`/users/update/profile/${userId}`, {
