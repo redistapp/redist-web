@@ -114,4 +114,6 @@ Convenções de UI:
 
 ## Verificação
 
-`npm run test` (Vitest + Testing Library) cobre `lib/cpf.ts`, funções puras de `lib/resources.ts` e smoke tests de `LandingPage`/`LoginPage`. `npm run build` faz o type-check. Ao concluir mudanças, rode ambos e, quando possível, `npm run dev` e navegue pela tela afetada.
+`npm run test` (Vitest + Testing Library) cobre `lib/cpf.ts`, funções puras de `lib/resources.ts` e smoke tests de `LandingPage`/`LoginPage`. `npm run build` faz o type-check. Ao concluir mudanças, rode ambos e, quando possível, `npm run dev` e navegue pela tela afetada. O CI roda `lint`, `test` e `build`.
+
+**Lint:** `react/only-export-components` está **desligada de propósito** em `.oxlintrc.json`. Ela é sobre Fast Refresh em desenvolvimento, não sobre o build, e o projeto co-loca `useSession` com o `SessionProvider` e `buttonClasses` com o `Button` intencionalmente — separá-los custaria mexer em ~15 arquivos para ganhar recarga a quente marginal. Se um dia o Fast Refresh incomodar de verdade, é ali que se reverte.
