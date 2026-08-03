@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { Building2, Flag, LogOut, ShieldCheck, Users } from 'lucide-react'
+import { BarChart3, Building2, Flag, ListTree, LogOut, ShieldCheck, Users } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { Container } from '@/components/ui/Container'
 import { Logo } from '@/components/Logo'
@@ -7,7 +7,9 @@ import { useSession } from '@/contexts/SessionContext'
 import { cn } from '@/lib/cn'
 
 const nav: { to: string; label: string; icon: LucideIcon; end?: boolean }[] = [
+  { to: '/admin', label: 'Visão geral', icon: BarChart3, end: true },
   { to: '/admin/instituicoes', label: 'Instituições', icon: Building2, end: true },
+  { to: '/admin/dados', label: 'Dados', icon: ListTree },
   { to: '/admin/denuncias', label: 'Denúncias', icon: Flag },
   { to: '/admin/usuarios', label: 'Usuários', icon: Users },
 ]

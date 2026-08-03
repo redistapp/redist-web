@@ -10,6 +10,8 @@ import MatchesPage from '@/pages/app/MatchesPage'
 import ProfilePage from '@/pages/app/ProfilePage'
 import PremiumPage from '@/pages/app/PremiumPage'
 import AdminLoginPage from '@/pages/admin/AdminLoginPage'
+import AdminDashboardPage from '@/pages/admin/DashboardPage'
+import ReferenceDataPage from '@/pages/admin/ReferenceDataPage'
 import InstitutionsPage from '@/pages/admin/InstitutionsPage'
 import ReportsPage from '@/pages/admin/ReportsPage'
 import UsersPage from '@/pages/admin/UsersPage'
@@ -52,7 +54,9 @@ function App() {
           </AdminProtectedRoute>
         }
       >
+        <Route path="/admin" element={<AdminDashboardPage />} />
         <Route path="/admin/instituicoes" element={<InstitutionsPage />} />
+        <Route path="/admin/dados" element={<ReferenceDataPage />} />
         <Route path="/admin/denuncias" element={<ReportsPage />} />
         <Route path="/admin/usuarios" element={<UsersPage />} />
       </Route>
